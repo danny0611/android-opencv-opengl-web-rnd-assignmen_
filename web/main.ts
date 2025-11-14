@@ -85,7 +85,7 @@ class CameraViewer {
         this.resolutionElement = document.getElementById('resolutionValue')!;
         this.statusElement = document.getElementById('statusValue')!;
         this.statusIndicator = document.getElementById('statusIndicator')!;
-        this.statusDot = this.statusIndicator.querySelector('span') as HTMLElement;
+        this.statusDot = this.statusIndicator.querySelector('.status-dot') as HTMLElement;
         if (!this.statusDot) {
             throw new Error('Status indicator dot not found');
         }
@@ -234,11 +234,9 @@ class CameraViewer {
         if (connected) {
             this.statusElement.textContent = 'Connected';
             this.statusIndicator.classList.add('connected');
-            this.statusDot.setAttribute('data-state', 'connected');
         } else {
             this.statusElement.textContent = 'Disconnected';
             this.statusIndicator.classList.remove('connected');
-            this.statusDot.setAttribute('data-state', 'disconnected');
         }
         const cameraState = connected
             ? (this.isCameraActive ? 'Streaming' : 'Sample Preview')
@@ -513,8 +511,12 @@ class CameraViewer {
         this.cameraStateElement.textContent = 'Idle';
         this.clearSparkline();
         this.diagnosticsExpanded = false;
-        this.diagnosticsHeader.classList.remove('open');
-        this.diagnosticsBody.classList.remove('open');
+        if (this.diagnosticsHeader) {
+            this.diagnosticsHeader.classList.remove('open');
+        }
+        if (this.diagnosticsBody) {
+            this.diagnosticsBody.classList.remove('open');
+        }
         
         this.processMode = 'grayscale';
         this.processModeElement.textContent = 'Grayscale';
