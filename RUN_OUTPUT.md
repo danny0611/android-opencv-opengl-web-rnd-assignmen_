@@ -8,7 +8,6 @@ cd web
 npm install
 npm run build
 ```
-
 ### Build Output:
 ```
 added 3 packages, and audited 4 packages in 5s
