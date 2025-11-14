@@ -280,13 +280,9 @@ To send frames from Android to web viewer:
 
 ## 📸 Screenshots
 
-_Placeholder for screenshots:_
+<img width="1915" height="917" alt="image" src="https://github.com/user-attachments/assets/4cf9e556-7d43-4466-9ea3-a54cc4660bd2" />
+<img width="1900" height="833" alt="image" src="https://github.com/user-attachments/assets/712ed5e6-9e52-4be2-b08b-9a42f170ecdf" />
 
-- Android app running with camera preview
-- Processed frame with Canny edge detection
-- Processed frame with grayscale conversion
-- Web viewer displaying processed frame
-- FPS and resolution overlays
 
 ## ⚡ Performance Notes
 
