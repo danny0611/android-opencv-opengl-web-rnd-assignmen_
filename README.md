@@ -372,6 +372,10 @@ This project is provided as-is for educational and assessment purposes.
 
 R&D Intern Assessment Project
 
+## 📦 Repository
+
+This project is available on GitHub: https://github.com/danny0611/android-opencv-opengl-web-rnd-assignmen_
+
 ---
 
 **Note**: This is a complete implementation following all specified requirements. All code is production-ready and fully commented.
