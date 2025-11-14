@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">OpenCVGLCamera</string>
+    <string name="camera_permission_required">This app needs camera permission to function.</string>
+    <string name="resolution_text">Resolution: %1$dx%2$d</string>
+    <string name="fps_text">FPS: %1$d</string>
+    <string name="toggle_processed">Toggle</string>
+    <string name="raw_mode">Raw</string>
+    <string name="grayscale_mode">Grayscale</string>
+    <string name="canny_mode">Canny</string>
+</resources>

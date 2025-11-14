@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenCV GL Camera - Web Viewer</title>
+    <style>
+        :root {
+            --primary: #6a5acd;
+            --primary-dark: #2f2a8b;
+            --accent: #53d1cb;
+            --bg-dark: #0f172a;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --shadow: 0 25px 60px -20px rgba(79, 70, 229, 0.55);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b 0%, #0f172a 45%, #020617 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 32px 24px;
+            color: var(--text-main);
+        }
+
+        .background-orbs::before,
+        .background-orbs::after {
+            content: "";
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.35;
+            z-index: 0;
+        }
+
+        .background-orbs::before {
+            top: -120px;
+            left: -80px;
+            background: linear-gradient(135deg, #4f46e5 0%, #22d3ee 100%);
+        }
+
+        .background-orbs::after {
+            bottom: -160px;
+            right: -100px;
+            background: linear-gradient(135deg, #f97316 0%, #ec4899 100%);
+        }
+
+        .app-shell {
+            position: relative;
+            width: min(1200px, 100%);
+            z-index: 1;
+        }
+
+        header {
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        header .subtitle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        header h1 {
+            font-size: clamp(32px, 4vw, 44px);
+            font-weight: 700;
+            line-height: 1.2;
+            color: #ffffff;
+            text-shadow: 0 12px 30px rgba(79, 70, 229, 0.35);
+        }
+
+        header p {
+            max-width: 640px;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 28px;
+            align-items: start;
+        }
+
+        .card {
+            position: relative;
+            background: var(--bg-card);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(148, 163, 184, 0.08);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 28px;
+        }
+
+        .frame-card {
+            padding: 0;
+            overflow: hidden;
+            grid-column: 1 / -1;
+        }
+
+        .controls-card {
+            padding: 24px 28px 32px 28px;
+        }
+
+        .info-card {
+            padding: 26px;
+        }
+
+        .frame-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 28px 16px 28px;
+        }
+
+        .frame-meta {
+            display: flex;
+            gap: 16px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .status-indicator span {
+            display: inline-flex;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--danger);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.65);
+        }
+
+        .status-indicator.connected span {
+            background: var(--success);
+            box-shadow: 0 0 14px rgba(34, 197, 94, 0.8);
+        }
+
+        .frame-surface {
+            position: relative;
+            width: 100%;
+            min-height: 320px;
+            max-height: 520px;
+            background: radial-gradient(circle at center, rgba(148, 163, 184, 0.25), transparent);
+            overflow: hidden;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        .frame-surface::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.18), transparent 55%);
+            mix-blend-mode: screen;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .frame-surface[data-transition="true"]::after {
+            opacity: 1;
+            animation: pulse 0.6s ease forwards;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0; }
+            40% { opacity: 0.55; }
+            100% { opacity: 0; }
+        }
+
+        .mode-chip {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+            box-shadow: 0 12px 24px -12px rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .mode-chip::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px rgba(83, 209, 203, 0.85);
+        }
+
+        .mode-chip.flash {
+            animation: chipPulse 0.6s ease;
+        }
+
+        @keyframes chipPulse {
+            0% {
+                transform: translateY(0) scale(1);
+                box-shadow: 0 12px 24px -12px rgba(15, 23, 42, 0.8);
+            }
+            50% {
+                transform: translateY(-4px) scale(1.05);
+                box-shadow: 0 18px 30px -10px rgba(83, 209, 203, 0.45);
+            }
+            100% {
+                transform: translateY(0) scale(1);
+                box-shadow: 0 12px 24px -12px rgba(15, 23, 42, 0.8);
+            }
+        }
+
+        .mode-chip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .mode-chip span {
+            display: inline-flex;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        .frame-transition {
+            animation: framePulse 0.6s ease;
+        }
+
+        @keyframes framePulse {
+            0% { filter: brightness(1.1) saturate(1.1); opacity: 0.85; }
+            50% { filter: brightness(1.25) saturate(1.2); opacity: 1; }
+            100% { filter: brightness(1) saturate(1); opacity: 1; }
+        }
+
+        button {
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 600;
+            color: #0f172a;
+            background: linear-gradient(135deg, #22d3ee 0%, #38bdf8 100%);
+            box-shadow: 0 12px 25px -10px rgba(56, 189, 248, 0.65);
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            perspective: 600px;
+        }
+
+        button:hover {
+            transform: translateY(-3px) rotateX(6deg) rotateY(-4deg);
+            box-shadow: 0 16px 30px -10px rgba(56, 189, 248, 0.7);
+        }
+
+        button:active {
+            transform: translateY(0) rotateX(0) rotateY(0);
+        }
+
+        .button-icon {
+            display: inline-flex;
+            font-size: 18px;
+        }
+
+        #stopCameraBtn {
+            background: linear-gradient(135deg, #f87171 0%, #fb7185 100%);
+            display: none;
+            color: #1e293b;
+        }
+
+        .info-panel h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .analytics-panel {
+            margin-top: 28px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .sparkline-container {
+            padding: 18px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sparkline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        #fpsSparkline {
+            width: 100%;
+            height: 90px;
+        }
+
+        .latency-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(83, 209, 203, 0.15);
+            border: 1px solid rgba(83, 209, 203, 0.35);
+            color: #67e8f9;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .shortcut-hints {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .shortcut-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(79, 70, 229, 0.22);
+            color: rgba(199, 210, 254, 0.95);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .shortcut-hint kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(129, 140, 248, 0.4);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .sparkline-wrap {
+            margin-top: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+        }
+
+        .sparkline-wrap header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .sparkline-wrap h4 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+        }
+
+        .sparkline {
+            width: 100%;
+            height: 80px;
+        }
+
+        .diagnostics-panel {
+            margin-top: 22px;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+            background: rgba(15, 23, 42, 0.55);
+            overflow: hidden;
+        }
+
+        .diagnostics-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .diagnostics-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .diagnostics-body.open {
+            max-height: 260px;
+        }
+
+        .diagnostics-grid {
+            display: grid;
+            gap: 14px;
+            padding: 0 18px 18px 18px;
+        }
+
+        .diagnostics-item {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 14px;
+            padding: 14px 16px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chevron {
+            transition: transform 0.3s ease;
+        }
+
+        .diagnostics-header.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .controls {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        @media (max-width: 1024px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 20px;
+            }
+
+            header h1 {
+                font-size: 30px;
+            }
+
+            .frame-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .frame-meta {
+                flex-wrap: wrap;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-orbs"></div>
+    <div class="app-shell">
+        <header>
+            <span class="subtitle">📷 OpenCV + OpenGL Pipeline</span>
+            <h1>Real-time Camera Processing & Visualisation</h1>
+            <p>
+                Stream live frames from the Android device, process them with OpenCV and OpenGL, and inspect the output in real time.
+                Switch between raw, grayscale, and edge-detected views instantly.
+            </p>
+        </header>
+
+        <div class="layout">
+            <div class="card frame-card">
+                <div class="frame-header">
+                    <div class="frame-meta">
+                        <div class="meta-item">
+                            <span class="badge">Performance</span>
+                            <span class="meta-value" id="fpsValue">0</span>
+                            <span class="meta-label">Frames per second</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="badge">Resolution</span>
+                            <span class="meta-value" id="resolutionValue">0x0</span>
+                            <span class="meta-label">Current frame size</span>
+                        </div>
+                    </div>
+                    <div class="status-indicator" id="statusIndicator">
+                        <span></span>
+                        <div id="statusValue">Disconnected</div>
+                    </div>
+                </div>
+                <div class="frame-surface" id="frameSurface" data-transition="false">
+                    <div class="mode-chip" id="modeChip">Mode: Grayscale</div>
+                    <canvas id="frameCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="card controls-card">
+                <div class="controls">
+                    <button id="startCameraBtn"><span class="button-icon">🎥</span><span>Start Live Camera</span></button>
+                    <button id="stopCameraBtn"><span class="button-icon">🛑</span><span>Stop Camera</span></button>
+                    <button id="loadFrameBtn"><span class="button-icon">🖼️</span><span>Load Sample Frame</span></button>
+                    <button id="toggleProcessBtn"><span class="button-icon">✨</span><span>Toggle Processing</span></button>
+                    <button id="resetBtn"><span class="button-icon">♻️</span><span>Reset</span></button>
+                </div>
+            </div>
+
+            <div class="card info-card">
+                <div class="info-panel">
+                    <h3>Frame Intelligence</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Frame Count</span>
+                            <span class="info-value" id="frameCount">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Update</span>
+                            <span class="info-value" id="lastUpdate">Never</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Processing Mode</span>
+                            <span class="info-value" id="processMode">Grayscale</span>
+                        </div>
+                    </div>
+
+                    <div class="analytics-panel">
+                        <div class="sparkline-container">
+                            <div class="sparkline-header">
+                                <span>FPS History (last 30 samples)</span>
+                                <span class="latency-pill">Latency <span id="latencyValue">0.0 ms</span></span>
+                            </div>
+                            <canvas id="fpsSparkline"></canvas>
+                        </div>
+
+                        <div class="shortcut-hints">
+                            <div class="shortcut-hint"><kbd>S</kbd><span>Start / Stop Camera</span></div>
+                            <div class="shortcut-hint"><kbd>T</kbd><span>Toggle Processing</span></div>
+                            <div class="shortcut-hint"><kbd>1</kbd><span>Raw</span></div>
+                            <div class="shortcut-hint"><kbd>2</kbd><span>Grayscale</span></div>
+                            <div class="shortcut-hint"><kbd>3</kbd><span>Canny</span></div>
+                            <div class="shortcut-hint"><kbd>R</kbd><span>Reset Viewer</span></div>
+                        </div>
+                    </div>
+
+                    <div class="diagnostics-panel" id="diagnosticsPanel">
+                        <div class="diagnostics-header" id="diagnosticsHeader">
+                            <div>
+                                <span class="badge">Diagnostics</span>
+                                <h4 style="margin-top: 6px; font-size: 16px;">Runtime Breakdown</h4>
+                            </div>
+                            <div class="chevron">⌄</div>
+                        </div>
+                        <div class="diagnostics-body" id="diagnosticsBody">
+                            <div class="diagnostics-grid">
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Average FPS</span>
+                                    <span class="info-value" id="avgFpsValue">0</span>
+                                </div>
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Peak FPS</span>
+                                    <span class="info-value" id="maxFpsValue">0</span>
+                                </div>
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Lowest FPS</span>
+                                    <span class="info-value" id="minFpsValue">0</span>
+                                </div>
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Avg Latency</span>
+                                    <span class="info-value" id="avgLatencyValue">0.0 ms</span>
+                                </div>
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Max Latency</span>
+                                    <span class="info-value" id="maxLatencyValue">0.0 ms</span>
+                                </div>
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Mode</span>
+                                    <span class="info-value" id="diagModeValue">Grayscale</span>
+                                </div>
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Camera State</span>
+                                    <span class="info-value" id="cameraStateValue">Idle</span>
+                                </div>
+                                <div class="diagnostics-item">
+                                    <span class="info-label">Frames Processed</span>
+                                    <span class="info-value" id="totalFramesValue">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="dist/main.js"></script>
+</body>
+</html>
+
