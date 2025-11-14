@@ -1,5 +1,4 @@
 package com.opencvgl.app
-
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
