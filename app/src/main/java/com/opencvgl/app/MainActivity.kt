@@ -1,5 +1,4 @@
 package com.opencvgl.app
-
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
