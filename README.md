@@ -280,8 +280,9 @@ To send frames from Android to web viewer:
 
 ## 📸 Screenshots
 
-<img width="1915" height="917" alt="image" src="https://github.com/user-attachments/assets/4cf9e556-7d43-4466-9ea3-a54cc4660bd2" />
-<img width="1900" height="833" alt="image" src="https://github.com/user-attachments/assets/712ed5e6-9e52-4be2-b08b-9a42f170ecdf" />
+<img width="1900" height="913" alt="image" src="https://github.com/user-attachments/assets/2d1db048-1f81-475d-9975-6a2e5eec173a" />
+<img width="1559" height="553" alt="image" src="https://github.com/user-attachments/assets/265cf883-ec7f-4295-9f29-903657fc878f" />
+<img width="1550" height="744" alt="image" src="https://github.com/user-attachments/assets/f4c37f04-0629-44f8-8341-3619057f962e" />
 
 
 ## ⚡ Performance Notes
@@ -369,14 +370,7 @@ To send frames from Android to web viewer:
 This project is provided as-is for educational and assessment purposes.
 
 ## 👨‍💻 Author
+ ** Dhanush M**
 
-R&D Intern Assessment Project
 
-## 📦 Repository
-
-This project is available on GitHub: https://github.com/danny0611/android-opencv-opengl-web-rnd-assignmen_
-
----
-
-**Note**: This is a complete implementation following all specified requirements. All code is production-ready and fully commented.
 
