@@ -7,7 +7,6 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// Global processor instance
 static OpenCVProcessor* g_processor = nullptr;
 
 extern "C" {
@@ -29,21 +28,23 @@ Java_com_opencvgl_app_MainActivity_nativeInit(JNIEnv *env, jobject thiz, jint wi
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_com_opencvgl_app_MainActivity_nativeProcessFrame(JNIEnv *env, jobject thiz, jbyteArray rgbaData, jint width, jint height) {
+Java_com_opencvgl_app_MainActivity_nativeProcessFrame(JNIEnv *env, jobject thiz, jobject yBuffer, jobject uBuffer, jobject vBuffer, jint yStride, jint uStride, jint vStride, jint uvPixelStride, jint width, jint height) {
     if (g_processor == nullptr) {
         LOGE("Processor not initialized");
         return nullptr;
     }
 
-    jbyte* data = env->GetByteArrayElements(rgbaData, nullptr);
-    if (data == nullptr) {
-        LOGE("Failed to get byte array elements");
+    unsigned char* y = (unsigned char*)env->GetDirectBufferAddress(yBuffer);
+    unsigned char* u = (unsigned char*)env->GetDirectBufferAddress(uBuffer);
+    unsigned char* v = (unsigned char*)env->GetDirectBufferAddress(vBuffer);
+
+    if (y == nullptr || u == nullptr || v == nullptr) {
+        LOGE("Failed to get direct buffer address");
         return nullptr;
     }
 
     cv::Mat processed;
-    bool success = g_processor->processFrame(reinterpret_cast<unsigned char*>(data), width, height, processed);
-    env->ReleaseByteArrayElements(rgbaData, data, JNI_ABORT);
+    bool success = g_processor->processFrame(y, u, v, yStride, uStride, vStride, uvPixelStride, width, height, processed);
 
     if (!success || processed.empty()) {
         LOGE("Failed to process frame");
@@ -63,12 +64,9 @@ Java_com_opencvgl_app_MainActivity_nativeProcessFrame(JNIEnv *env, jobject thiz,
 
 JNIEXPORT void JNICALL
 Java_com_opencvgl_app_MainActivity_nativeSetProcessMode(JNIEnv *env, jobject thiz, jint mode) {
-    if (g_processor == nullptr) {
-        LOGE("Processor not initialized");
-        return;
+    if (g_processor != nullptr) {
+        g_processor->setProcessMode(mode);
     }
-    g_processor->setProcessMode(mode);
-    LOGI("Process mode set to: %d", mode);
 }
 
 JNIEXPORT void JNICALL

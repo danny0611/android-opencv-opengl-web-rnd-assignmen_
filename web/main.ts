@@ -85,9 +85,11 @@ class CameraViewer {
         this.resolutionElement = document.getElementById('resolutionValue')!;
         this.statusElement = document.getElementById('statusValue')!;
         this.statusIndicator = document.getElementById('statusIndicator')!;
-        this.statusDot = this.statusIndicator.querySelector('.status-dot') as HTMLElement;
+        // Try to find statusDot by ID first, then by class
+        this.statusDot = document.getElementById('statusDot') as HTMLElement || 
+                        this.statusIndicator.querySelector('.status-dot') as HTMLElement;
         if (!this.statusDot) {
-            throw new Error('Status indicator dot not found');
+            console.warn('Status indicator dot not found, continuing without it');
         }
         this.frameCountElement = document.getElementById('frameCount')!;
         this.lastUpdateElement = document.getElementById('lastUpdate')!;
